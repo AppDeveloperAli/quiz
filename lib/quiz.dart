@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:quiz/custom_button.dart';
 import 'package:quiz/model.dart';
+import 'package:quiz/start.dart';
+import 'package:restart_app/restart_app.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key});
@@ -25,13 +28,18 @@ class _QuizScreenState extends State<QuizScreen> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        backgroundColor: const Color(0xff26294b),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
             const SizedBox(
               height: 32,
             ),
-            Text('Question $questionNumber/${questions.length}'),
+            Text(
+              'Question $questionNumber/${questions.length}',
+              style: const TextStyle(color: Colors.white),
+            ),
             const Divider(
               thickness: 1,
               color: Colors.grey,
@@ -61,14 +69,14 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Column buildQuestion(Question question) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         const SizedBox(
           height: 32,
         ),
         Text(
           question.text,
-          style: const TextStyle(fontSize: 25),
+          style: const TextStyle(fontSize: 25, color: Colors.white),
         ),
         const SizedBox(
           height: 32,
@@ -95,28 +103,51 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  ElevatedButton buildElevatedButton() {
-    return ElevatedButton(
-        onPressed: () {
-          if (questionNumber < questions.length) {
-            _controller.nextPage(
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInExpo);
-            setState(() {
-              questionNumber++;
-              _isLocked = false;
-            });
-          } else {
-            Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ResultPage(score: _score),
-                ));
-          }
-        },
-        child: Text(questionNumber < questions.length
-            ? 'Next Page'
-            : 'See the Result'));
+  Widget buildElevatedButton() {
+    return InkWell(
+      onTap: () {
+        if (questionNumber < questions.length) {
+          _controller.nextPage(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeInExpo);
+          setState(() {
+            questionNumber++;
+            _isLocked = false;
+          });
+        } else {
+          Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ResultPage(score: _score),
+              ));
+        }
+      },
+      child: Row(
+        children: [
+          Expanded(
+            child: Card(
+                color: const Color.fromARGB(255, 60, 45, 104),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        questionNumber < questions.length
+                            ? 'Next Page'
+                            : 'See the Result',
+                        style:
+                            const TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                    ],
+                  ),
+                )),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -138,11 +169,13 @@ class OptionWidget extends StatelessWidget {
 
   Widget buildOption(BuildContext context, Option option) {
     final color = getColorsforOption(option, question);
-    return GestureDetector(
-      onTap: () => onClickedOption(option),
+    return InkWell(
+      onTap: () {
+        onClickedOption(option);
+      },
       child: Container(
         padding: const EdgeInsets.all(12),
-        margin: EdgeInsets.symmetric(vertical: 8),
+        margin: const EdgeInsets.symmetric(vertical: 8),
         height: 50,
         decoration: BoxDecoration(
             color: Colors.grey.shade200,
@@ -179,19 +212,19 @@ class OptionWidget extends StatelessWidget {
     if (question.isLocked) {
       if (isSelected) {
         return option.isCorrect
-            ? Icon(Icons.check_circle, color: Colors.green)
-            : Icon(
+            ? const Icon(Icons.check_circle, color: Colors.green)
+            : const Icon(
                 Icons.cancel,
                 color: Colors.red,
               );
       } else if (option.isCorrect) {
-        return Icon(
+        return const Icon(
           Icons.check_circle,
           color: Colors.green,
         );
       }
     }
-    return SizedBox.shrink();
+    return const SizedBox.shrink();
   }
 }
 
@@ -202,8 +235,64 @@ class ResultPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ThemeData theme = Theme.of(context);
+    Size screen = MediaQuery.of(context).size;
     return Scaffold(
-      body: Center(child: Text('You got $score/ ${questions.length}')),
+      backgroundColor: theme.backgroundColor,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: <Widget>[
+            Container(
+              width: screen.width - 40.0,
+              padding: const EdgeInsets.all(20.0),
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20.0),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black38,
+                      offset: Offset(6.0, 12.0),
+                      blurRadius: 6.0,
+                    )
+                  ]),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: <Widget>[
+                  Container(
+                    height: screen.width / 3.5,
+                    width: screen.width / 3.5,
+                    child: const Image(
+                      image: AssetImage('assets/images/celebrate.png'),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text(
+                      'You got $score / ${questions.length}',
+                      style: const TextStyle(
+                        fontSize: 30.0,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      Restart.restartApp(webOrigin: 'start');
+                    },
+                    child: const CustomButton(
+                      text: 'Play Again',
+                    ),
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
