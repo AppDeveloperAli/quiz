@@ -1,8 +1,11 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:quiz/quiz.dart';
 import 'package:quiz/start.dart';
 
-void main() {
+Future main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -21,7 +24,7 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         'start': (context) => Start(),
-        'quiz': (context) => QuizScreen(),
+        // 'quiz': (context) => QuizScreen(),
         // 'result': (context) => Result(),
       },
       home: Start(),

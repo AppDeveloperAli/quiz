@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:quiz/custom_button.dart';
 import 'package:quiz/model.dart';
@@ -5,69 +6,92 @@ import 'package:quiz/start.dart';
 import 'package:restart_app/restart_app.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key});
+   String dataPath;
+   QuizScreen({super.key,required this.dataPath});
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
+
+
   late PageController _controller;
   int questionNumber = 1;
   int _score = 0;
   bool _isLocked = false;
+  late Stream<QuerySnapshot<Map<String, dynamic>>> myStream;
 
   @override
   void initState() {
     super.initState();
 
+    myStream =
+    FirebaseFirestore.instance.collection(widget.dataPath.toString()).snapshots();
+
     _controller = PageController(initialPage: 0);
   }
+
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         backgroundColor: const Color(0xff26294b),
-        body: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            const SizedBox(
-              height: 32,
-            ),
-            Text(
-              'Question $questionNumber/${questions.length}',
-              style: const TextStyle(color: Colors.white),
-            ),
-            const Divider(
-              thickness: 1,
-              color: Colors.grey,
-            ),
-            Expanded(
-                child: PageView.builder(
-              controller: _controller,
-              itemCount: questions.length,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                final question = questions[index];
-                return buildQuestion(question);
-              },
-            )),
-            const SizedBox(
-              height: 20,
-            ),
-            _isLocked ? buildElevatedButton() : const SizedBox.shrink(),
-            const SizedBox(
-              height: 20,
-            )
-          ]),
+        body: StreamBuilder(
+          stream: myStream,
+          builder:(BuildContext context, AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot){
+
+            final data = snapshot.data!.docs.map((doc) => doc.data()).toList();
+
+            if(snapshot.hasData){
+              return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child:
+                  Column(crossAxisAlignment: CrossAxisAlignment.center, children: [
+                    const SizedBox(
+                      height: 32,
+                    ),
+                    Text(
+                      'Question $questionNumber/${snapshot.data!.docs.length}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const Divider(
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                    Expanded(
+                        child: PageView.builder(
+                          controller: _controller,
+                          itemCount: questions.length,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final item = data[index];
+
+                            return buildQuestion(item['question']);
+                          },
+                        )),
+                    const SizedBox(
+                      height: 20,
+                    ),
+                    _isLocked ? buildElevatedButton() : const SizedBox.shrink(),
+                    const SizedBox(
+                      height: 20,
+                    )
+                  ]),
+                );
+            } else if(snapshot.hasError){
+              return const Text('Something went wrong');
+            }
+            return Text('Loading...');
+          }
         ),
       ),
     );
   }
 
-  Column buildQuestion(Question question) {
+
+  Column buildQuestion(String question) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -75,30 +99,30 @@ class _QuizScreenState extends State<QuizScreen> {
           height: 32,
         ),
         Text(
-          question.text,
+          question.toString(),
           style: const TextStyle(fontSize: 25, color: Colors.white),
         ),
         const SizedBox(
           height: 32,
         ),
-        Expanded(
-            child: OptionWidget(
-          question: question,
-          onClickedOption: (option) {
-            if (question.isLocked) {
-              return;
-            } else {
-              setState(() {
-                question.isLocked = true;
-                question.selectedOption = option;
-              });
-              _isLocked = question.isLocked;
-              if (question.selectedOption!.isCorrect) {
-                _score++;
-              }
-            }
-          },
-        ))
+        // Expanded(
+        //     child: OptionWidget(
+        //   question: question,
+        //   onClickedOption: (option) {
+        //     if (question.isLocked) {
+        //       return;
+        //     } else {
+        //       setState(() {
+        //         question.isLocked = true;
+        //         question.selectedOption = option;
+        //       });
+        //       _isLocked = question.isLocked;
+        //       if (question.selectedOption!.isCorrect) {
+        //         _score++;
+        //       }
+        //     }
+        //   },
+        // ))
       ],
     );
   }
@@ -152,6 +176,7 @@ class _QuizScreenState extends State<QuizScreen> {
 }
 
 class OptionWidget extends StatelessWidget {
+
   final Question question;
   final ValueChanged<Option> onClickedOption;
 
